@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.roxxane.mtiptdcf.mixins",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "ServerTriggerStatusMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "refmap": "mixins.mtiptdcf.refmap.json"
+}
