@@ -1,39 +1,33 @@
 package com.roxxane.mtiptdcf.mixins;
 
-import com.llamalad7.mixinextras.sugar.Local;
-import com.roxxane.mtiptdcf.MtCrashFixer;
 import mods.thecomputerizer.musictriggers.server.channels.ServerTriggerStatus;
-import mods.thecomputerizer.musictriggers.server.data.PersistentTriggerDataProvider;
-import net.minecraft.server.level.ServerPlayer;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(ServerTriggerStatus.class)
-public class ServerTriggerStatusMixin {
-    // Covers all but the last
-    @ModifyVariable(
-        method = "decodeDynamicInfo",
-        at = @At("STORE"),
-        ordinal = 1,
-        remap = false
-    )
-    private static boolean decodeDynamicInfoInject(boolean bool, @Local ServerPlayer player) {
-        return bool && player != null && PersistentTriggerDataProvider.getPlayerCapability(player) != null;
-    }
+import java.util.Iterator;
+import java.util.Map;
 
-    // Covers all but the first
+@Mixin(ServerTriggerStatus.class)
+abstract class ServerTriggerStatusMixin {
+    @Shadow(remap = false) @Final private static Map<String, ServerTriggerStatus> SERVER_DATA;
+
+    @Shadow(remap = false) protected abstract void runChecks();
+
     @Redirect(
-        method = "decodeDynamicInfo",
-        at = @At(
-            value = "INVOKE",
-            target = "Ljava/util/Objects;nonNull(Ljava/lang/Object;)Z"
-        ),
-        remap = false
-    )
-    private static boolean decodeDynamicInfoRedirect(Object obj, @Local ServerPlayer player) {
-        MtCrashFixer.logger.info(String.valueOf(obj));
-        return player != null && PersistentTriggerDataProvider.getPlayerCapability(player) != null;
+        method = "runServerChecks",
+        at = @At(value = "INVOKE", target = "Ljava/util/Iterator;hasNext()Z"),
+        remap = false)
+    private static boolean runServerChecksInject(Iterator instance) {
+        SERVER_DATA.entrySet().removeIf(entry -> {
+            if (entry.getValue().isValid()) {
+                ((ServerTriggerStatusMixin) (Object) entry.getValue()).runChecks();
+                return false;
+            } else
+                return true;
+        });
+        return false;
     }
 }

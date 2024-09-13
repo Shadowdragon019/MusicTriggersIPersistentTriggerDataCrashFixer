@@ -3,6 +3,7 @@
   "package": "com.roxxane.mtiptdcf.mixins",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "PersistentTriggerDataProviderMixin",
     "ServerTriggerStatusMixin"
   ],
   "injectors": {
