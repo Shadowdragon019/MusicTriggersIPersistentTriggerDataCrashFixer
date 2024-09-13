@@ -7,8 +7,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 @Mixin(ServerTriggerStatus.class)
 abstract class ServerTriggerStatusMixin {
@@ -20,7 +19,20 @@ abstract class ServerTriggerStatusMixin {
         method = "runServerChecks",
         at = @At(value = "INVOKE", target = "Ljava/util/Iterator;hasNext()Z"),
         remap = false)
-    private static boolean runServerChecksInject(Iterator instance) {
+    private static boolean runServerChecksInject(Iterator<?> instance) {
+        var toRemove = new ArrayList<String>();
+
+        for (var entry : SERVER_DATA.entrySet())
+            if (entry.getValue().isValid()) {
+                ((ServerTriggerStatusMixin) (Object) entry.getValue()).runChecks();
+            } else
+                toRemove.add(entry.getKey());
+
+        for (var key : toRemove)
+            SERVER_DATA.remove(key);
+
+        return false;
+        /*
         SERVER_DATA.entrySet().removeIf(entry -> {
             if (entry.getValue().isValid()) {
                 ((ServerTriggerStatusMixin) (Object) entry.getValue()).runChecks();
@@ -29,5 +41,6 @@ abstract class ServerTriggerStatusMixin {
                 return true;
         });
         return false;
+         */
     }
 }
