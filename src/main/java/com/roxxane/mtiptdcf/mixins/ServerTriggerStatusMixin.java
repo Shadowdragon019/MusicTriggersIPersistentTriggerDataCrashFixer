@@ -15,24 +15,12 @@ abstract class ServerTriggerStatusMixin {
 
     @Shadow(remap = false) protected abstract void runChecks();
 
-    @SuppressWarnings("SynchronizeOnNonFinalField")
     @Redirect(
-        method = "runServerChecks",
-        at = @At(value = "INVOKE", target = "Ljava/util/Iterator;hasNext()Z"),
+        method = "runServerChecks", at = @At(value = "INVOKE", target = "Ljava/util/Iterator;hasNext()Z"),
         remap = false)
-    private static boolean runServerChecksInject(Iterator<?> instance) {
-        synchronized (SERVER_DATA) {
-            SERVER_DATA.entrySet().removeIf(entry -> {
-                if (entry.getValue().isValid()) {
-                    ((ServerTriggerStatusMixin) (Object) entry.getValue()).runChecks();
-                    return false;
-                } else
-                    return true;
-            });
-            return false;
-        }
-        /*
+    private synchronized static boolean runServerChecksRedirect(Iterator<?> instance) {
         var toRemove = new ArrayList<String>();
+
         for (var entry : SERVER_DATA.entrySet())
             if (entry.getValue().isValid())
                 ((ServerTriggerStatusMixin) (Object) entry.getValue()).runChecks();
@@ -41,17 +29,7 @@ abstract class ServerTriggerStatusMixin {
 
         for (var key : toRemove)
             SERVER_DATA.remove(key);
+
         return false;
-         */
-        /*
-        SERVER_DATA.entrySet().removeIf(entry -> {
-            if (entry.getValue().isValid()) {
-                ((ServerTriggerStatusMixin) (Object) entry.getValue()).runChecks();
-                return false;
-            } else
-                return true;
-        });
-        return false;
-         */
     }
 }
